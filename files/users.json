@@ -1,0 +1,38 @@
+[
+  {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "age": 30,
+    "isAdmin": false
+  },
+  {
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "age": 25,
+    "isAdmin": true
+  },
+  {
+    "name": "Jim Doe",
+    "email": "jim.doe@example.com",
+    "age": 20,
+    "isAdmin": false
+  },
+  {
+    "name": "Jill Doe",
+    "email": "jill.doe@example.com",
+    "age": 22,
+    "isAdmin": true
+  },
+  {
+    "name": "Shantanu Shubham",
+    "email": "shantanu@example.com",
+    "age": 26,
+    "isAdmin": true
+  },
+  {
+    "name": "Aadityesh Jain",
+    "email": "aadityesh@example.com",
+    "age": 24,
+    "isAdmin": true
+  }
+]

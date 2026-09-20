@@ -1,0 +1,6 @@
+name,email,age,isAdmin
+John Doe,john.doe@example.com,30,False
+Jane Doe,jane.doe@example.com,25,True
+Jim Doe,jim.doe@example.com,20,False
+Jill Doe,jill.doe@example.com,22,True
+Shantanu Shubham,shantanu@example.com,26,True
