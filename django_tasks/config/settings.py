@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework", # Recognised as a Django app
+    "tasks", # Django app for the tasks
 ]
 
 MIDDLEWARE = [

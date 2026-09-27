@@ -14,9 +14,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls), 
+    # The path("api/", include("tasks.urls")) is the URL for the tasks app
+    # To access the tasks app, we need to go to localhost:8000/api/
+    path("api/", include("tasks.urls"))
 ]
