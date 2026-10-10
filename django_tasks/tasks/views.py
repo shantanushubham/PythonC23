@@ -1,10 +1,9 @@
 from typing import override
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
-import json
-
+from rest_framework.decorators import action, api_view
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from tasks.serializers import TaskSerializer
 from .models import Task
@@ -16,9 +15,6 @@ from .models import Task
 
 # A view function that adds two numbers
 # The view function takes a request object as an argument
-
-TASK_FILE_PATH = "tasks/files/tasks.json"
-
 
 @api_view(["GET"])
 # localhost:8000/api/add-numbers/
@@ -38,93 +34,92 @@ def add_numbers(request):
 
 
 # ******** TASKS - FILE READING ********
-class TaskView(APIView):
 
-    def __get_all_tasks(self):
-        with open(TASK_FILE_PATH, "r") as file:
-            return json.loads(file.read())  # Returns a list of tasks
+class TaskViewSet(ModelViewSet):
 
-    # GET request to get a task by id
-    @override  # This is just a convention to override the method. It doesn't do anything.
-    def get(self, request, id=None):
-        try:
-            if id is None:
-                # SELECT * FROM tasks;
-                tasks = Task.objects.all()
-                serializer = TaskSerializer(tasks, many=True)
-                serialized_data = serializer.data
-                return Response(data=serialized_data)
-            else:
-                # Find the task with the given id in the database
+    queryset = Task.objects.all() # SELECT * FROM tasks WHERE completed = false;
+    serializer_class = TaskSerializer
 
-                # SELECT * FROM tasks WHERE id = <task-id>;
-                task = Task.objects.get(id=id)
-                # The task info is going out of the backend in the response and thus, needs to be serialised.
-                # TaskSerializer(task) is the instance of the TaskSerializer class that converts the task instance to a JSON object.
-                # It also validates the data and returns a ValidationError if the data is invalid.
-                serializer = TaskSerializer(task)
-                serialized_data = serializer.data
-                return Response(data=serialized_data)
-        except Task.DoesNotExist:
-            return Response(
-                data={"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+    @action(detail=False, methods=["GET"], url_path="completed")
+    # detail=False means that the action is not associated with a specific task.
+    # detail=True means that the action is associated with a specific task.
+    def get_only_completed_tasks(self, request):
+        tasks = Task.objects.filter(completed=True)
+        serializer = TaskSerializer(tasks, many=True)
+        return Response(serializer.data)
 
-    # POST request to create a new task
-    @override  # This is just a convention to override the method. It doesn't do anything.
-    def post(self, request):  # Cannot change the name of the method
-        data = request.data
-        serializer = TaskSerializer(data=data)
-        if not serializer.is_valid():
-            # serializer.errors is a dictionary of the errors in the data.
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        # Task.objects.create(**serializer.validated_data) is equivalent to serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @action(detail=True, methods=["GET"], url_path="specific")
+    def get_a_specific_task(self, request, pk=None):
+        task = Task.objects.get(id=pk)
+        serializer = TaskSerializer(task)
+        return Response(serializer.data)
 
-    # PUT request to update a task
-    @override  # This is just a convention to override the method. It doesn't do anything.
-    def put(self, request, id):
-        try:
-            data = request.data
-            task = Task.objects.get(id=id)
-            # task is the instance of the Task model that we want to update.
-            # data is the data that we want to update the task with.
-            serializer = TaskSerializer(task, data=data)
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Task.DoesNotExist:
-            return Response(
-                {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+# class TaskViewSet(ViewSet):
 
-    # DELETE request to delete a task
-    @override  # This is just a convention to override the method. It doesn't do anything.
-    def delete(self, request, id):
-        try:
-            task = Task.objects.get(id=id)
-            task.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Task.DoesNotExist:
-            return Response(
-                {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+#     # queryset = Task.objects.all()
+#     # # queryset is basically the DB query that will be executed to get the data on top of which any operation will happen.
+#     # serializer_class = TaskSerializer
+#     # serializer_class is the serializer that will be used to serialize the data.
 
-    # PATCH request to update a task partially
-    @override  # This is just a convention to override the method. It doesn't do anything.
-    def patch(self, request, id):
-        try:
-            data = request.data
-            task = Task.objects.get(id=id)
-            # partial=True means that only the fields that are provided in the request will be updated.
-            serializer = TaskSerializer(task, data=data, partial=True)
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Task.DoesNotExist:
-            return Response(
-                {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+#     @override
+#     def list(self, request): # GET request to get all tasks
+#         tasks = Task.objects.all()
+#         serializer = TaskSerializer(tasks, many=True) # many=True is used because we are serializing multiple tasks.
+#         return Response(serializer.data)
+
+
+#     @override
+#     def retrieve(self, request, pk=None): # GET request to get a task by id && pk = primary key (id)
+#         try:
+#             task = Task.objects.get(id=pk)
+#             serializer = TaskSerializer(task)
+#             return Response(serializer.data)
+#         except Task.DoesNotExist:
+#             return Response(
+#                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
+#             )
+
+#     @override
+#     def create(self, request): # POST request to create a new task
+#         serializer = TaskSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     @override
+#     def update(self, request, pk=None): # PUT request to update a task
+#         try:
+#             task = Task.objects.get(id=pk)
+#             serializer = TaskSerializer(task, data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save()
+#                 return Response(serializer.data, status=status.HTTP_200_OK)
+#         except Task.DoesNotExist:
+#             return Response(
+#                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
+#             )
+        
+#     @override
+#     def destroy(self, request, pk=None): # DELETE request to delete a task
+#         try:
+#             task = Task.objects.get(id=pk)
+#             task.delete()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except Task.DoesNotExist:
+#             return Response(
+#                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
+#             )
+
+#     @override
+#     def partial_update(self, request, pk=None): # PATCH request to update a task partially
+#         try:
+#             task = Task.objects.get(id=pk)
+#             serializer = TaskSerializer(task, data=request.data, partial=True)
+#             if serializer.is_valid():
+#                 serializer.save()
+#                 return Response(serializer.data, status=status.HTTP_200_OK)
+#         except Task.DoesNotExist:
+#             return Response(
+#                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
+#             )

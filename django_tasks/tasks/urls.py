@@ -1,9 +1,14 @@
-from django.urls import path
-from .views import add_numbers, TaskView
+from django.urls import path, include
+from .views import add_numbers, TaskViewSet
+from rest_framework.routers import DefaultRouter
 
 # urlpatterns is a list of paths that the server will listen to
+
+router = DefaultRouter()
+router.register(r"task", TaskViewSet, basename="task")
+# basename is used to avoid conflicts with other views.
+
 urlpatterns = [
     path("add-numbers/", add_numbers), 
-    path("task/", TaskView.as_view()),
-    path("task/<int:id>/", TaskView.as_view()), # The <int:id> is a path parameter, it is used to get the id from the URL
+    path("", include(router.urls)),
 ]
