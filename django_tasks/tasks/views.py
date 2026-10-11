@@ -5,8 +5,8 @@ from rest_framework.decorators import action, api_view
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from tasks.serializers import TaskSerializer
-from .models import Task
+from tasks.serializers import TaskSerializer, TaskUserSerializer, UserSerializer
+from .models import Task, User
 
 # views.py is the file that contains the views for the tasks app.
 # A view is a function that returns a response to a request.
@@ -15,6 +15,7 @@ from .models import Task
 
 # A view function that adds two numbers
 # The view function takes a request object as an argument
+
 
 @api_view(["GET"])
 # localhost:8000/api/add-numbers/
@@ -35,9 +36,10 @@ def add_numbers(request):
 
 # ******** TASKS - FILE READING ********
 
+
 class TaskViewSet(ModelViewSet):
 
-    queryset = Task.objects.all() # SELECT * FROM tasks WHERE completed = false;
+    queryset = Task.objects.all()  # SELECT * FROM tasks WHERE completed = false;
     serializer_class = TaskSerializer
 
     @action(detail=False, methods=["GET"], url_path="completed")
@@ -53,6 +55,7 @@ class TaskViewSet(ModelViewSet):
         task = Task.objects.get(id=pk)
         serializer = TaskSerializer(task)
         return Response(serializer.data)
+
 
 # class TaskViewSet(ViewSet):
 
@@ -99,7 +102,7 @@ class TaskViewSet(ModelViewSet):
 #             return Response(
 #                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
 #             )
-        
+
 #     @override
 #     def destroy(self, request, pk=None): # DELETE request to delete a task
 #         try:
@@ -123,3 +126,22 @@ class TaskViewSet(ModelViewSet):
 #             return Response(
 #                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
 #             )
+
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    @action(detail=True, methods=["GET"], url_path="tasks")
+    def get_tasks_of_a_user(self, request, pk=None):
+        tasks = Task.objects.filter(user__id=pk)
+        # tasks is a list
+        # tasks[0] or tasks.first() is the first task in the list
+        if tasks.count() > 0:
+            user = tasks.first().user
+            serializer = TaskUserSerializer({"user": user, "task_list": tasks})
+            return Response(serializer.data)
+        else:
+            return Response(
+                {"error": "No tasks found"}, status=status.HTTP_404_NOT_FOUND
+            )
