@@ -10,6 +10,7 @@ router.register(r"user", UserViewSet, basename="user")
 # basename is used to avoid conflicts with other views.
 
 urlpatterns = [
-    path("add-numbers/", add_numbers), 
+    path("add-numbers/", add_numbers),
+    # path("tasks-with-filter/", get_tasks_with_filter), 
     path("", include(router.urls)),
 ]

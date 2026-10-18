@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",  # Recognised as a Django app
     "tasks",  # Django app for the tasks
+    "django_filters", # Recognised as a Django app. Required for filtering tasks
 ]
 
 MIDDLEWARE = [
@@ -121,3 +122,12 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 MAILERS = {"default": {"BACKEND": "django.core.mail.backends.console.EmailBackend"}}
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 10,
+
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ]
+}

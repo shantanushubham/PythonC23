@@ -1,10 +1,14 @@
 from typing import override
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
+from rest_framework.filters import OrderingFilter, SearchFilter
 
+# from tasks.filters import TaskFilter
+from tasks.pagination import TaskPagination
 from tasks.serializers import TaskSerializer, TaskUserSerializer, UserSerializer
 from .models import Task, User
 
@@ -34,6 +38,32 @@ def add_numbers(request):
         )
 
 
+# @api_view(["GET"])
+# def get_tasks_with_filter(request):
+#     """
+#     A user can want a list of tasks with or with any filters.
+#     We must provide only that data which matches the filters asked for.
+
+#     To achieve this. we modify the database query to include the filters.
+#     If any filter is passed, it is added to the DB query.
+#     If no filter is passed, all tasks are returned.
+#     """
+#     # completed and title are applied only when they are passed.
+#     # If a param is missing, that filter is skipped, so every matching task is returned.
+#     filters = {}
+
+#     if "completed" in request.query_params:
+#         filters["completed"] = request.query_params["completed"].lower() == "true"
+
+#     if request.query_params.get("title"):
+#         filters["title__icontains"] = request.query_params["title"]
+
+#     tasks = Task.objects.filter(**filters) # All tasks if filters = {}
+#     serializer = TaskSerializer(tasks, many=True)
+#     return Response(serializer.data)
+    
+
+
 # ******** TASKS - FILE READING ********
 
 
@@ -41,6 +71,13 @@ class TaskViewSet(ModelViewSet):
 
     queryset = Task.objects.all()  # SELECT * FROM tasks WHERE completed = false;
     serializer_class = TaskSerializer
+    pagination_class = TaskPagination
+    # It checks for equality of the fields in the filterset_fields with the fields in the request.query_params.
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["completed"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at"]
+    ordering = ["-created_at"]
 
     @action(detail=False, methods=["GET"], url_path="completed")
     # detail=False means that the action is not associated with a specific task.
@@ -64,7 +101,7 @@ class TaskViewSet(ModelViewSet):
 #     # serializer_class = TaskSerializer
 #     # serializer_class is the serializer that will be used to serialize the data.
 
-#     @override
+#     @override -> Doesn't hold any functionality, just a decorator that tells the IDE that the method is overridden.
 #     def list(self, request): # GET request to get all tasks
 #         tasks = Task.objects.all()
 #         serializer = TaskSerializer(tasks, many=True) # many=True is used because we are serializing multiple tasks.
