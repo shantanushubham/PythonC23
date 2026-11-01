@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import add_numbers, TaskViewSet, UserViewSet
+from .views import LoginView, add_numbers, TaskViewSet, UserViewSet
 from rest_framework.routers import DefaultRouter
 
 # urlpatterns is a list of paths that the server will listen to
@@ -11,6 +11,7 @@ router.register(r"user", UserViewSet, basename="user")
 
 urlpatterns = [
     path("add-numbers/", add_numbers),
-    # path("tasks-with-filter/", get_tasks_with_filter), 
+    # path("tasks-with-filter/", get_tasks_with_filter),
     path("", include(router.urls)),
+    path("login/", LoginView.as_view(), name="login"),
 ]

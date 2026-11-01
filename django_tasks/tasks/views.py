@@ -9,7 +9,13 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 
 # from tasks.filters import TaskFilter
 from tasks.pagination import TaskPagination
-from tasks.serializers import TaskSerializer, TaskUserSerializer, UserSerializer
+from tasks.serializers import (
+    LoginSerializer,
+    TaskSerializer,
+    TaskUserSerializer,
+    UserSerializer,
+)
+from tasks.utils import BCryptPasswordUtil
 from .models import Task, User
 
 # views.py is the file that contains the views for the tasks app.
@@ -61,7 +67,6 @@ def add_numbers(request):
 #     tasks = Task.objects.filter(**filters) # All tasks if filters = {}
 #     serializer = TaskSerializer(tasks, many=True)
 #     return Response(serializer.data)
-    
 
 
 # ******** TASKS - FILE READING ********
@@ -182,3 +187,26 @@ class UserViewSet(ModelViewSet):
             return Response(
                 {"error": "No tasks found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class LoginView(APIView):
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+        # SELECT * FROM users WHERE email = email
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        password_match = BCryptPasswordUtil.verify_password(password, user.password)
+        if not password_match:
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(LoginSerializer(user).data, status=status.HTTP_200_OK)

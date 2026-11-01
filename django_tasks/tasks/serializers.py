@@ -2,6 +2,8 @@
 
 from typing import override
 from rest_framework import serializers
+
+from tasks.utils import BCryptPasswordUtil
 from .models import Task, User
 
 
@@ -40,14 +42,23 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = User
         fields = "__all__"
 
+    @override
+    def create(self, validated_data: dict):
+        validated_data["password"] = BCryptPasswordUtil.hash_password(validated_data["password"])
+        return super().create(validated_data)
 
 class TaskUserSerializer(serializers.Serializer):
 
     user = UserSerializer(read_only=True)
     task_list = TaskSerializer(many=True, read_only=True)
     # read_only=True means that the field is read-only and cannot be modified.
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
