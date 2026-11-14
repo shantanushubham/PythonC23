@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",  # Recognised as a Django app
     "tasks",  # Django app for the tasks
-    "django_filters", # Recognised as a Django app. Required for filtering tasks
+    "django_filters",  # Recognised as a Django app. Required for filtering tasks,
+    "rest_framework_simplejwt",  # Recognised as a Django app. Required for JWT authentication
 ]
 
 MIDDLEWARE = [
@@ -126,8 +128,23 @@ MAILERS = {"default": {"BACKEND": "django.core.mail.backends.console.EmailBacken
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 10,
-
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-    ]
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
+    ],
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Lifetime of the access token
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Type of the authentication header
+    "SIGNING_KEY": "MY_DJANGO_APPLIATION_SECRET_KEY",  # Signing key for the JWT
+}
+
+AUTH_USER_MODEL = "tasks.User"
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+]

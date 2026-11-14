@@ -1,13 +1,17 @@
 from typing import override
+from django.contrib.auth import authenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 # from tasks.filters import TaskFilter
+from tasks.authentication import JWTAuthentication
 from tasks.pagination import TaskPagination
 from tasks.serializers import (
     LoginSerializer,
@@ -171,12 +175,27 @@ class TaskViewSet(ModelViewSet):
 
 
 class UserViewSet(ModelViewSet):
+    
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    @action(detail=True, methods=["GET"], url_path="tasks")
-    def get_tasks_of_a_user(self, request, pk=None):
-        tasks = Task.objects.filter(user__id=pk)
+    @override
+    def get_permissions(self):
+        if self.action == "create":
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+
+        # final_permission_classes = []
+        # for permission in permission_classes:
+        #     final_permission_classes.append(permission())
+        # return final_permission_classes
+        return [permission() for permission in permission_classes]
+    
+
+    @action(detail=False, methods=["GET"], url_path="tasks")
+    def get_tasks_of_a_user(self, request):
+        tasks = Task.objects.filter(user=request.user)
         # tasks is a list
         # tasks[0] or tasks.first() is the first task in the list
         if tasks.count() > 0:
@@ -198,15 +217,20 @@ class LoginView(APIView):
 
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
-        # SELECT * FROM users WHERE email = email
-        user = User.objects.filter(email=email).first()
+        user = authenticate(request, email=email, password=password)
         if not user:
             return Response(
                 {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
             )
-        password_match = BCryptPasswordUtil.verify_password(password, user.password)
-        if not password_match:
-            return Response(
-                {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        return Response(LoginSerializer(user).data, status=status.HTTP_200_OK)
+
+        access_token = AccessToken.for_user(user)
+        return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
+
+
+# Just for teaching purposes. Not used in the project.
+class ProtectedView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"message": f"Authenticated user: {request.user.email}"}, status=status.HTTP_200_OK)

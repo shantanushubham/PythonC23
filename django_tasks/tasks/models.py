@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 # Models are the way to define the structure of the data, which will be used as a standard/blueprint for the data.
@@ -11,17 +12,16 @@ from django.db import models
 
 # Create your models here.
 
+class User(AbstractUser):
+    # AbstractUser already provides: 
+    # username, first_name, last_name, password, is_active, date_joined
 
-class User(models.Model):
-
-    first_name = models.CharField(max_length=200)
-    last_name = models.CharField(max_length=200)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
 
 class Task(models.Model):
 

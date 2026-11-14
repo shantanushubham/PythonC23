@@ -34,23 +34,53 @@ from .models import Task, User
 #     return instance
 
 
-class TaskSerializer(serializers.ModelSerializer):
-
-    class Meta:  # Meta class is used to provide additional information about the serializer.
-        model = Task  # The model that the serializer is associated with.
-        fields = "__all__"  # The fields that will be serialized.
-
-
 class UserSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = "__all__"
+        fields = ["id", "username", "email", "first_name", "last_name", "password", "created_at", "updated_at", "is_active"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     @override
     def create(self, validated_data: dict):
-        validated_data["password"] = BCryptPasswordUtil.hash_password(validated_data["password"])
+        # validated_data["password"] = BCryptPasswordUtil.hash_password(validated_data["password"])
+        # return super().create(validated_data)
+
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        if password:
+            user.set_password(password) # This will hash the password and set it to the user.
+        user.save()
+        return user
+
+    @override
+    def update(self, instance: User, validated_data: dict):
+        password = validated_data.pop("password", None)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
+
+class TaskSerializer(serializers.ModelSerializer):
+
+    user = UserSerializer(read_only=True)
+
+    class Meta:  # Meta class is used to provide additional information about the serializer.
+        model = Task  # The model that the serializer is associated with.
+        fields = ["id", "title", "description", "completed", "created_at", "updated_at", "user"]  # The fields that will be serialized.
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    @override
+    def create(self, validated_data: dict):
+        request = self.context.get("request")
+        validated_data["user"] = request.user
         return super().create(validated_data)
+    
 
 class TaskUserSerializer(serializers.Serializer):
 
