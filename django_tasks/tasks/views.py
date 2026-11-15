@@ -7,7 +7,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 # from tasks.filters import TaskFilter
@@ -175,7 +175,7 @@ class TaskViewSet(ModelViewSet):
 
 
 class UserViewSet(ModelViewSet):
-    
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -191,7 +191,6 @@ class UserViewSet(ModelViewSet):
         #     final_permission_classes.append(permission())
         # return final_permission_classes
         return [permission() for permission in permission_classes]
-    
 
     @action(detail=False, methods=["GET"], url_path="tasks")
     def get_tasks_of_a_user(self, request):
@@ -223,8 +222,11 @@ class LoginView(APIView):
                 {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        access_token = AccessToken.for_user(user)
-        return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {"refresh": str(refresh), "access": str(refresh.access_token)},
+            status=status.HTTP_200_OK,
+        )
 
 
 # Just for teaching purposes. Not used in the project.
@@ -233,4 +235,7 @@ class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({"message": f"Authenticated user: {request.user.email}"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": f"Authenticated user: {request.user.email}"},
+            status=status.HTTP_200_OK,
+        )

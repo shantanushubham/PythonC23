@@ -22,3 +22,7 @@ class JWTAuthentication(BaseAuthentication):
             return (user, validated_token)
         except InvalidToken:
             return None
+
+
+# Refresh Token - Long Lived
+# Access Token - Short Lived

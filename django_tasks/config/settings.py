@@ -26,7 +26,9 @@ SECRET_KEY = "django-insecure-t&d=g=6wm*w72uyl%vi13nx9-@n7%b0i0h3xr5=tmqd2q-%awd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# In development, accept any Host header so a phone on the same Wi-Fi can reach the server via
+# the computer's LAN IP (which can change). In production (DEBUG = False) list real hostnames.
+ALLOWED_HOSTS = ["*"] if DEBUG else []
 
 
 # Application definition
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     "tasks",  # Django app for the tasks
     "django_filters",  # Recognised as a Django app. Required for filtering tasks,
     "rest_framework_simplejwt",  # Recognised as a Django app. Required for JWT authentication
+    "rest_framework_simplejwt.token_blacklist",  # Recognised as a Django app. Required for JWT blacklist
 ]
 
 MIDDLEWARE = [
@@ -135,9 +138,13 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Lifetime of the access token
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=2),  # Lifetime of the access token
     "AUTH_HEADER_TYPES": ("Bearer",),  # Type of the authentication header
     "SIGNING_KEY": "MY_DJANGO_APPLIATION_SECRET_KEY",  # Signing key for the JWT
+
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Lifetime of the refresh token
+    "ROTATE_REFRESH_TOKENS": True,  # Rotate the refresh token on each request i.e. generate a new refresh token for each request
+    "BLACKLIST_AFTER_ROTATION": True,  # Blacklist the old refresh token after rotation
 }
 
 AUTH_USER_MODEL = "tasks.User"

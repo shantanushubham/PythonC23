@@ -1,8 +1,11 @@
 asgiref==3.12.1
+bcrypt==5.0.0
 Django==6.1.1
 django-filter==26.2
 djangorestframework==3.18.1
+djangorestframework_simplejwt==5.5.1
 psycopg==3.3.6
 psycopg-binary==3.3.6
 psycopg2-binary==2.9.13
+PyJWT==2.15.1
 sqlparse==0.6.0
