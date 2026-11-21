@@ -1,0 +1,979 @@
+{
+  "info": {
+    "name": "Ledger API",
+    "description": "Django REST API for the ledger app.\n\nSelect the Ledger Local environment, then run Auth / Signup (or Login). Later requests send Authorization: Bearer {{access_token}}.\n\nBase URL defaults to http://127.0.0.1:8000. Postgres from docker-compose.yml must be running and migrations applied before these calls succeed.\n\nList endpoints use page-number pagination with a page size of 20.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "email",
+      "value": "ada@example.com"
+    },
+    {
+      "key": "password",
+      "value": "Str0ng-Passw0rd!"
+    },
+    {
+      "key": "new_password",
+      "value": "An0ther-Str0ng-Pw!"
+    },
+    {
+      "key": "first_name",
+      "value": "Ada"
+    },
+    {
+      "key": "last_name",
+      "value": "Lovelace"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "wallet_id",
+      "value": ""
+    },
+    {
+      "key": "bank_account_id",
+      "value": ""
+    },
+    {
+      "key": "account_holder_name",
+      "value": "Ada Lovelace"
+    },
+    {
+      "key": "bank_name",
+      "value": "HDFC Bank"
+    },
+    {
+      "key": "account_number",
+      "value": "123456789012"
+    },
+    {
+      "key": "ifsc_code",
+      "value": "HDFC0001234"
+    },
+    {
+      "key": "account_type",
+      "value": "savings"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Public except logout and change-password. Signup or login stores access_token, refresh_token, and user_id. Access tokens last 15 minutes. Refresh rotates the refresh token and blacklists the previous one. Logout blacklists the current refresh token.",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/signup/",
+            "description": "Register a user. Email is stored as the username (lowercased). A wallet with balance 0.00 is created in the same transaction. Returns the user plus access and refresh tokens.\n\n400 if the email is taken or the password fails Django's validators (min length 8, not entirely numeric, not a common password, not too similar to the email) or confirm_password does not match.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"first_name\": \"{{first_name}}\",\n  \"last_name\": \"{{last_name}}\",\n  \"password\": \"{{password}}\",\n  \"confirm_password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('access_token', body.access);",
+                  "save('refresh_token', body.refresh);",
+                  "if (body.user) save('user_id', body.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/login/",
+            "description": "Email and password. Email match is case-insensitive. Returns the same shape as signup. 400 with non_field_errors when the credentials are wrong or the user is inactive.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('access_token', body.access);",
+                  "save('refresh_token', body.refresh);",
+                  "if (body.user) save('user_id', body.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/refresh/",
+            "description": "Public. Send the current refresh token. The response includes a new access token and, because rotation is on, a new refresh token. The previous refresh token is blacklisted. 401 if the refresh token is missing, expired, or already blacklisted.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('access_token', body.access);",
+                  "save('refresh_token', body.refresh);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/logout/",
+            "description": "Requires the access token. Blacklists the refresh token in the body and returns 205 with an empty body. A blacklisted refresh token cannot be used again. 400 if that refresh token is already invalid.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 205', function () {",
+                  "    pm.response.to.have.status(205);",
+                  "});",
+                  "",
+                  "save('access_token', '');",
+                  "save('refresh_token', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/change-password/",
+            "description": "Requires the access token. Checks old_password against the current user, then runs the same password validators on new_password. On success the stored password variable is updated to new_password so the next Login uses it. Existing access tokens stay valid until they expire.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"{{password}}\",\n  \"new_password\": \"{{new_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const next = pm.variables.get('new_password');",
+                  "save('password', next);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "All routes require a Bearer access token. A non-staff caller only sees and edits their own user; another user's id returns 404. Staff see every user. POST /api/users/ is disabled (405); create accounts with Auth / Signup. DELETE sets is_active to false and returns 204. The row is kept. An inactive user cannot log in.",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/",
+            "description": "Paginated (page size 20): count, next, previous, results. Non-staff results contain only the caller. Optional query: ?page=2"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const first = body.results && body.results[0];",
+                  "if (first) save('user_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/me/",
+            "description": "The authenticated user. Password is never included. id, is_active, date_joined, and last_login are read-only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('user_id', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update current user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/me/",
+            "description": "Partial update. Writable fields are email, first_name, and last_name. Changing email rewrites username to the same lowercased value. 400 if another user already has that email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"{{first_name}}\",\n  \"last_name\": \"{{last_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Replace current user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/me/",
+            "description": "Full update of the writable fields. email is required. first_name and last_name may be blank.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"first_name\": \"{{first_name}}\",\n  \"last_name\": \"{{last_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/{{user_id}}/",
+            "description": "One user by id. 404 when the id is not the caller and the caller is not staff."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/users/{{user_id}}/",
+            "description": "Soft delete: is_active becomes false. Response body is empty (204). The user can no longer log in."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Wallets",
+      "description": "Read-only. Signup creates exactly one wallet per user. Balance changes are not exposed on this API. Non-staff callers only see their own wallet. balance is a decimal string such as \"0.00\".",
+      "item": [
+        {
+          "name": "List wallets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/wallets/",
+            "description": "Paginated. Non-staff: one result, the caller's wallet. Staff: every wallet."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const first = body.results && body.results[0];",
+                  "if (first) save('wallet_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/wallets/me/",
+            "description": "The caller's wallet. Fields: id, email, balance, created_at, updated_at. All are read-only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('wallet_id', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/wallets/{{wallet_id}}/",
+            "description": "One wallet by id. 404 if it belongs to someone else and the caller is not staff."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bank accounts",
+      "description": "Full CRUD, always scoped to the authenticated user, including staff. The owner is taken from the token, not the body. account_number is 9 to 18 digits. ifsc_code is 11 characters (4 letters, a 0, 6 letters or digits) and is stored uppercased. account_type is savings or current. The same user cannot add the same IFSC and account number twice (400). Two different users may.",
+      "item": [
+        {
+          "name": "List bank accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/",
+            "description": "Paginated list of the caller's accounts only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const first = body.results && body.results[0];",
+                  "if (first) save('bank_account_id', first.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create bank account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/",
+            "description": "Creates an account for the caller. ifsc_code may be sent in any case. 201 returns the stored account, including id, created_at, and updated_at.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account_holder_name\": \"{{account_holder_name}}\",\n  \"bank_name\": \"{{bank_name}}\",\n  \"account_number\": \"{{account_number}}\",\n  \"ifsc_code\": \"{{ifsc_code}}\",\n  \"account_type\": \"{{account_type}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('bank_account_id', body.id);",
+                  "if (body.ifsc_code) save('ifsc_code', body.ifsc_code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get bank account",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/{{bank_account_id}}/",
+            "description": "One of the caller's accounts. 404 if the id is missing or belongs to another user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update bank account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/{{bank_account_id}}/",
+            "description": "Partial update. Send only the fields that change.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bank_name\": \"{{bank_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Replace bank account",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/{{bank_account_id}}/",
+            "description": "Full replacement of the writable fields. account_holder_name, bank_name, account_number, ifsc_code, and account_type are all required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account_holder_name\": \"{{account_holder_name}}\",\n  \"bank_name\": \"{{bank_name}}\",\n  \"account_number\": \"{{account_number}}\",\n  \"ifsc_code\": \"{{ifsc_code}}\",\n  \"account_type\": \"{{account_type}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete bank account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-accounts/{{bank_account_id}}/",
+            "description": "Hard delete. 204 with an empty body. 404 if the account is not the caller's."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

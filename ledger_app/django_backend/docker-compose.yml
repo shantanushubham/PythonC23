@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: ledger_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ledger
+      POSTGRES_USER: ledger_user
+      POSTGRES_PASSWORD: ledger_password
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18+ images expect the volume at /var/lib/postgresql
+      - ledger_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger_user -d ledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ledger_pgdata:

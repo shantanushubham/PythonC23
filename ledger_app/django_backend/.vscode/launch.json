@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Django: runserver",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver", "127.0.0.1:8000"],
+      "django": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings"
+      }
+    },
+    {
+      "name": "Django: test",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["test", "--verbosity", "2"],
+      "django": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings"
+      }
+    },
+    {
+      "name": "Django: test current app",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["test", "${relativeFileDirname}", "--verbosity", "2"],
+      "django": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings"
+      }
+    }
+  ]
+}
