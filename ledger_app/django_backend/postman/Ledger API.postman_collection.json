@@ -78,6 +78,26 @@
     {
       "key": "account_type",
       "value": "savings"
+    },
+    {
+      "key": "bank_txn_id",
+      "value": ""
+    },
+    {
+      "key": "bank_txn_direction",
+      "value": "deposit"
+    },
+    {
+      "key": "bank_txn_amount",
+      "value": "50.00"
+    },
+    {
+      "key": "bank_txn_status",
+      "value": "completed"
+    },
+    {
+      "key": "bank_txn_remarks",
+      "value": "top-up"
     }
   ],
   "item": [
@@ -966,6 +986,185 @@
                   "",
                   "pm.test('Status is 204', function () {",
                   "    pm.response.to.have.status(204);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bank transactions",
+      "description": "Bank \u2194 wallet movements. Each create writes both a Transaction and a BankTransaction with the same txn_id.\n\ndeposit: sender_wallet=null, receiver_wallet=caller's wallet (credits wallet).\nwithdrawal: sender_wallet=caller's wallet, receiver_wallet=null (debits wallet).\n\nstatus defaults to completed (moves balance). pending records the intent without moving money. Update and delete are not allowed (405).",
+      "item": [
+        {
+          "name": "List bank transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-transactions/",
+            "description": "Paginated list of the caller's bank transactions only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "const first = body.results && body.results[0];",
+                  "if (first) save('bank_txn_id', first.txn_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deposit from bank",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-transactions/",
+            "description": "Credits the caller's wallet from bank_account. Creates Transaction(sender=null, receiver=wallet) and BankTransaction(direction=deposit).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bank_account\": {{bank_account_id}},\n  \"direction\": \"deposit\",\n  \"amount\": \"{{bank_txn_amount}}\",\n  \"status\": \"{{bank_txn_status}}\",\n  \"remarks\": \"{{bank_txn_remarks}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('bank_txn_id', body.txn_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw to bank",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-transactions/",
+            "description": "Debits the caller's wallet to bank_account. Creates Transaction(sender=wallet, receiver=null) and BankTransaction(direction=withdrawal). 400 if balance is insufficient.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bank_account\": {{bank_account_id}},\n  \"direction\": \"withdrawal\",\n  \"amount\": \"{{bank_txn_amount}}\",\n  \"status\": \"{{bank_txn_status}}\",\n  \"remarks\": \"{{bank_txn_remarks}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "save('bank_txn_id', body.txn_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get bank transaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/bank-transactions/{{bank_txn_id}}/",
+            "description": "One bank transaction by txn_id. Fields: txn_id, bank_account, direction, status, amount, remarks, sender_wallet, receiver_wallet, created_at, updated_at."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function save(key, value) {",
+                  "    if (value === undefined || value === null || value === '') return;",
+                  "    const text = String(value);",
+                  "    pm.collectionVariables.set(key, text);",
+                  "    if (pm.environment && pm.environment.name) pm.environment.set(key, text);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
                   "});",
                   ""
                 ]
