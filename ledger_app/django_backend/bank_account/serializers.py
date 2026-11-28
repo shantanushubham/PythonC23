@@ -9,15 +9,14 @@ from .services import create_bank_transaction
 class UpperCaseCharField(serializers.CharField):
     """Trims and upper-cases input *before* validators run."""
 
+    # to_internal_value is called before any validators are run.
+    # Valiidators are rules that are used to validate the data.
     def to_internal_value(self, data):
         return super().to_internal_value(data).upper()
 
 
 class BankAccountSerializer(serializers.ModelSerializer):
-    ifsc_code = UpperCaseCharField(
-        max_length=11,
-        validators=BankAccount._meta.get_field("ifsc_code").validators,
-    )
+    ifsc_code = UpperCaseCharField(max_length=11)
 
     class Meta:
         model = BankAccount
@@ -32,20 +31,33 @@ class BankAccountSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "created_at", "updated_at")
-        # The owner always comes from the request, never from the payload, and
-        # the (user, ifsc, account_number) uniqueness is checked in validate().
-        validators = []
 
+    # validate is called after all fields are validated on an individual level.
+    # It is used to validate the data on a global level.
     def validate(self, attrs):
+
+        # Situation 1: New Bank Account
+            # self.instance is None
+        # Situation 2: Updating Existing Bank Account
+            # self.instance is not None
+
+        # self.instance is the object that is already in the database and is used only during update scenario.
+
+        # Get the request sent by the client from context.
         request = self.context["request"]
+
+        # Get IFSC Code and Account Number from the request. If they are not present, get them from the instance.
         ifsc = attrs.get("ifsc_code", getattr(self.instance, "ifsc_code", None))
         number = attrs.get(
             "account_number", getattr(self.instance, "account_number", None)
         )
+        # query = SELECT * FROM bank_account WHERE user_id = request.user.id AND ifsc_code = ifsc AND account_number = number
         qs = BankAccount.objects.filter(
             user=request.user, ifsc_code=ifsc, account_number=number
         )
         if self.instance:
+            # If the instance is not None, we need to exclude the current instance from the queryset.]
+            # query.append(AND id != instance.pk)
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
             raise serializers.ValidationError(
@@ -56,15 +68,9 @@ class BankAccountSerializer(serializers.ModelSerializer):
 
 class BankTransactionSerializer(serializers.ModelSerializer):
     txn_id = serializers.UUIDField(source="pk", read_only=True)
-    amount = serializers.DecimalField(
-        max_digits=18, decimal_places=2, write_only=True
-    )
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, write_only=True)
     remarks = serializers.CharField(
-        required=False,
-        allow_null=True,
-        allow_blank=True,
-        default=None,
-        write_only=True,
+        required=False, allow_null=True, allow_blank=True, default=None, write_only=True
     )
     sender_wallet = serializers.IntegerField(
         source="transaction.sender_wallet_id", read_only=True, allow_null=True
